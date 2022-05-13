@@ -128,6 +128,28 @@ describe("the library test", function () {
         await library.connect(addr1).borrowBook(1)
         expect(library.connect(addr2).borrowBook(1)).to.be.revertedWith('No books left to borrow');
       })
+
+      it("Should let user check for avaliable books", async function () {
+        const addBook = await library.addNewBook(
+          "Lord of the Rings: Return of the King",
+          "Jr. Tolkien",
+          20
+        );
+        const check = await library.booksAvaliable()
+        console.log("Books ava:", check)
+      })
+
+      it("Should let users see who has book", async function () {
+        const addBook = await library.addNewBook(
+          "Lord of the Rings: Return of the King",
+          "Jr. Tolkien",
+          20
+        );
+
+        const rentbook =  await library.connect(addr1).borrowBook(1);
+        const checkWhoHas =  await library.whoHasTheBookIWant(1)
+        console.log("CHECKING..:", checkWhoHas)
+      })
     })
 
 })
