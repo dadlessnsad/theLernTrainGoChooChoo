@@ -5,9 +5,12 @@ require("@nomiclabs/hardhat-etherscan");
 require("hardhat-gas-reporter");
 require('dotenv').config();
 
+
+
+
+
 const { expect } = require("chai");
 const { DEPLOYER_PRIVATE_KEY, INFURA_PROJECT_ID, ETHERSCAN_API_KEY } = process.env;  
-
 
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -17,22 +20,24 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+
 module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
+
     },
     rinkeby: {
       url: INFURA_PROJECT_ID,
       accounts: [`${DEPLOYER_PRIVATE_KEY}`]
-    }
+    },
   },
   solidity: "0.8.4",
   settings: {
     optimizer: {
       enabled: true,
       runs: 999
-    }
+    },
   },
   contractSizer: {
     alphaSort: true,
@@ -43,7 +48,7 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
     gasPrice: 21,
-    coinmarketcap: "",
+    coinmarketcap: "ed130847-6c1e-4071-b79d-0e037d5df036",
   },
   etherscan: {
     apiKey: ETHERSCAN_API_KEY

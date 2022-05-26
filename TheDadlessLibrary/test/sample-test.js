@@ -1,4 +1,4 @@
-const { expect } = require("chai");
+const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
 
@@ -136,7 +136,7 @@ describe("the library test", function () {
           20
         );
         const check = await library.booksAvaliable()
-        console.log("Books ava:", check)
+        console.log("Books:", check)
       })
 
       it("Should let users see who has book", async function () {
@@ -149,6 +149,23 @@ describe("the library test", function () {
         const rentbook =  await library.connect(addr1).borrowBook(1);
         const checkWhoHas =  await library.whoHasTheBookIWant(1)
         console.log("CHECKING..:", checkWhoHas)
+      })
+
+      it("Should show all address that used the library", async function () {
+        const addBook = await library.addNewBook(
+          "Lord of the Rings: Return of the King",
+          "Jr. Tolkien",
+          20
+        );
+
+        const firstRenter =  await library.connect(addr1).borrowBook(1);
+        // const secondRenter =  await library.connect(addr2).borrowBook(1);
+      
+        const firstReturnor = await library.connect(addr1).returnBook(1);
+        // const secondReturnor = await library.connect(addr2).returnBook(1);
+
+        const history = await library.libraryTotalHistory()
+        console.log(history)
       })
     })
 
