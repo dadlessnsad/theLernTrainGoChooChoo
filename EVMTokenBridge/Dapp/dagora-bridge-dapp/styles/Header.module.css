@@ -1,0 +1,29 @@
+.Header {
+    position: absolute;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-bottom: 2px solid black;
+    min-height: 88px;
+    max-height: 111px;
+    width: 100%;
+    box-shadow: 2px, 5px;
+}
+
+.HeaderTitle {
+    font-size: 2rem;
+}
+
+.ConnectButton {
+    border: 2px solid black;
+    border-radius: 0.375rem;
+    background-color: white;
+    box-shadow: 5px 4px;
+    cursor: pointer;
+    padding: 10px;
+}
+
+.ConnectButton:hover {
+    padding: 8px;
+    background-color: rgb(219, 219, 219);
+}
