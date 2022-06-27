@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -43,22 +43,79 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
         address _tokenAddress,
         uint256 _amount,
         uint256 _nonce,
-        bytes calldata _signature
+        bytes memory _signature
     )   public
         payable 
         isPaused
     {
         require(msg.value >= bridgeFee, "Not enough Ether to cover bridge fee");
         require(_amount > 0, "Cant bridge 0 tokens");
-        require(nonceState != State.Transferring, "Transfer steps already complete");
+        require(nonceState[_nonce] != State.Transferring, "Transfer steps already complete");
 
+        bytes32 message = prefixed(keccak256(abi.encodePacked(
+            msg.sender,
+            _amount,
+            _nonce
+        )));
+
+        require(
+            recoverSigner(message, _signature) == msg.sender,
+            "Invalid signature"
+        );
+
+        nonceState[_nonce] = State.Transferring;
         _nonceCount++;
 
+        if(factory.isdAgoraToken(_tokenAddress)) {
+            //Burn/Unwrap token 
+            factory.WrapBurn(msg.sender, _tokenAddress, _amount);
+        }   else {
+            //Vault deposit
+            vault.Deposit(msg.sender, _tokenAddress, _amount, _nonce);
+        }
+
+        //vault.Deposit(msg.sender, _tokenAddress, _amount, _nonce);
+        emit Transfer(msg.sender, _tokenAddress, _amount, _nonce);
     }
 
     //After burning wrapped tokens a equivalent
     //amount will be released from the vault
-    function claim() public payable isPaused {}
+    function withdraw(
+        address _tokenAddress,
+        uint256 _amount,
+        uint256 _nonce,
+        bytes memory _signature
+    )   public 
+        payable 
+        
+        isPaused 
+    {
+        require(_amount > 0, "cant claim 0");
+        require(
+            nonceState[_nonce] != State.Withdrawing,
+            "Nonce already withdrew"
+        );
+
+        bytes32 message = prefixed(keccak256(abi.encodePacked(
+            msg.sender,
+            _amount,
+            _nonce
+        )));
+
+        require(
+            recoverSigner(message, _signature) == msg.sender,
+            "Invalid signature"
+        );
+
+        nonceState[_nonce] = State.Transferring;
+        if (vault._isDepositedToVault(_tokenAddress)) {
+            vault.Withdraw(msg.sender, _tokenAddress, _nonce);
+        }   else {
+            factory.WrapMint(msg.sender, _tokenAddress, _amount);
+        }
+
+        emit Withdraw(_tokenAddress, _amount, _nonce);
+    }
 
     //Changes paused state to True
     function pause() external onlyOwner {
@@ -74,21 +131,49 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
         bridgeFee = _newBridgeFee;
     }
 
-    //Helper relay function to check is a token has a wrapped address already
-    function isWrappedToken(address _tokenAddress) private view returns (bool) {
-        return factory.isWrappedToken(_tokenAddress);
-    }
-
     //returns the current nonce from mappings
     function getCurrentNonce() public view returns (uint256) {
         return _nonceCount;
     }
 
-    function getVaultContract() public view returns (address) {}
-
-    //Helper relay function to check if token address has stored 
-    //Deposti Id
-    function isDeposited(address _tokenAddress) private view returns (bool) {
-        vault._isDeposited(_tokenAddress);
+    function prefixed(bytes32 _hash) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(
+            '\x19Ethereum Signed Message:\n32',
+            _hash
+        ));
     }
+
+    function recoverSigner(bytes32 _message, bytes memory _sig) 
+        internal 
+        pure
+        returns (address)
+    {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        (v,r,s) = splitSignature(_sig);
+        return ecrecover(_message, v,r,s);
+    }
+
+    function splitSignature(bytes memory _sig) 
+        internal
+        pure
+        returns(uint8, bytes32, bytes32)
+    {
+        require(_sig.length == 65);
+
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        assembly {
+            r := mload(add(_sig, 32))
+            s := mload(add(_sig, 64))
+            v := byte(0, mload(add(_sig, 96)))
+        }
+
+        return (v,r,s);
+    }
+
 }
+

@@ -17,7 +17,7 @@ contract dAgoraVault is Ownable {
     struct DepositData {
         address _ownerOf;
         uint256 _amount;
-        uint256 _chainId;
+        uint256 _nonce;
         State state;
     }
 
@@ -65,8 +65,14 @@ contract dAgoraVault is Ownable {
             "Can't find Deposit Id"
         );
 
+        DepositData memory data = depositState[_nonce];
+        require(data._ownerOf == _sender, "Not token Owner");   
+        require(data.state != State.Withdrawing, "Already withdrew");
+        require(data._nonce == _nonce, "Wrong nonce");
+        
+        data.state = State.Withdrawing;
         ERC20 token = ERC20(_tokenAddress);
-        token.transfer(_sender, DepositData.);
+        token.transfer(_sender, data._amount);
     }
 
     // returns True or false based on if
@@ -75,8 +81,9 @@ contract dAgoraVault is Ownable {
         return addressDepositId[_tokenAddress].contains(_nonce);
     }
 
-
-    function _isDeposited(address _tokenAddress) external view onlyOwner returns(bool) {
+    //checks set of token address
+    //returns bool based on deposit length
+    function _isDepositedToVault(address _tokenAddress) external view onlyOwner returns(bool) {
         return addressDepositId[_tokenAddress].length() != 0;
     }
 }

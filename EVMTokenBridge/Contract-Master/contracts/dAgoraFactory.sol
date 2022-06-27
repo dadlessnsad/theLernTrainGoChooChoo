@@ -21,8 +21,11 @@ contract dAgoraFactory is Ownable {
     )   external 
         onlyOwner 
     {
-        //addddd requires
-        dAgoraToken token = _createWrappedToken(_tokenAddress);
+        require(
+            !isdAgoraToken(_tokenAddress),
+            "Token can't be wraped"
+        );
+        dAgoraToken token = _createdAgoraToken(_tokenAddress);
         token.WrapMint(_sender, _amount);
     }
 
@@ -33,15 +36,18 @@ contract dAgoraFactory is Ownable {
     )   external 
         onlyOwner 
     {
-        ///// addd requiresssss
+        require(
+            isdAgoraToken(_tokenAddress),
+            "Token address must be wrapped"
+        );
         dAgoraToken token = dAgoraToken(_tokenAddress);
         token.WrapBurn(_sender, _amount);
 
     }
 
-    function _createWrappedToken(address _tokenAddress) private returns(dAgoraToken) {
+    function _createdAgoraToken(address _tokenAddress) private returns(dAgoraToken) {
         dAgoraToken token;
-        address currentWrappedTkAddr = getWrappedToken(_tokenAddress);
+        address currentWrappedTkAddr = getdAgoraToken(_tokenAddress);
         if( currentWrappedTkAddr != address(0)) {
             token = dAgoraToken(_tokenAddress);
         }   else {
@@ -59,12 +65,12 @@ contract dAgoraFactory is Ownable {
         return token;
     }
 
-    function isWrappedToken(address _tokenAddress) public view returns(bool) {
+    function isdAgoraToken(address _tokenAddress) public view returns(bool) {
         return address(wrappedTokens[_tokenAddress]) != address(0);
     }
 
 
-    function getWrappedToken(address _tokenAddress) public view returns(address) {
+    function getdAgoraToken(address _tokenAddress) public view returns(address) {
         return originAddressToWrappedAddress[_tokenAddress];
     }
 
