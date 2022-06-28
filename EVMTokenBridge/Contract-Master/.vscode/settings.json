@@ -1,0 +1,6 @@
+{
+    "solidity-va.hover": true,
+    "solidity-va.parser.parseImports": true,
+    "solidity-va.uml.actors.enable": true,
+    "git.ignoreLimitWarning": true
+}

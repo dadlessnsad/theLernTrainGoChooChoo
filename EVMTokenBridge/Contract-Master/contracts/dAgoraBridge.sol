@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -15,7 +15,6 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
         Withdrawing
     }
 
-
     bool public paused;
     uint256 public bridgeFee;
     uint256 private _nonceCount;
@@ -23,13 +22,16 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
     dAgoraVault private vault;
     dAgoraFactory private factory;
 
-
     mapping(uint256 => State) private nonceState;
 
     event Transfer(address _sender, address _tokenAddress, uint256 _amount, uint256 _nonce);
     event Withdraw(address _tokenAddress, uint256 _amount, uint256 _nonce);
 
-    constructor() {}
+    constructor() Ownable() ReentrancyGuard() {
+        factory = new dAgoraFactory();
+        vault = new dAgoraVault();
+        bridgeFee = 0.001 ether;
+    }
 
     modifier isPaused() {
         require(!paused, "Contract is paused");
@@ -47,6 +49,7 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
     )   public
         payable 
         isPaused
+        nonReentrant
     {
         require(msg.value >= bridgeFee, "Not enough Ether to cover bridge fee");
         require(_amount > 0, "Cant bridge 0 tokens");
@@ -87,7 +90,7 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
         bytes memory _signature
     )   public 
         payable 
-        
+        nonReentrant
         isPaused 
     {
         require(_amount > 0, "cant claim 0");

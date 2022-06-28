@@ -1,19 +1,27 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("Greeter", function () {
-  it("Should return the new greeting once it's changed", async function () {
-    const Greeter = await ethers.getContractFactory("Greeter");
-    const greeter = await Greeter.deploy("Hello, world!");
-    await greeter.deployed();
+describe("ASSOT test", function () {
 
-    expect(await greeter.greet()).to.equal("Hello, world!");
+  let DAGORABRIDGE;
+  let bridge;
+  let owner;
+  let addr1;
+  let addr2;
 
-    const setGreetingTx = await greeter.setGreeting("Hola, mundo!");
+  beforeEach(async function () {
+    DAGORABRIDGE = await ethers.getContractFactory('dAgoraBridge');
+    [owner, addr1, addr2, addr3] = await ethers.getSigners();
 
-    // wait until the transaction is mined
-    await setGreetingTx.wait();
+    bridge = await DAGORABRIDGE.deploy();
+    await bridge.deployed();
 
-    expect(await greeter.greet()).to.equal("Hola, mundo!");
-  });
-});
+  })
+
+  describe('Deployment', function () {
+
+    it("should set right owner", async function () {
+      expect(await bridge.owner()).to.be.equal(owner.address);
+    });
+  })
+})
