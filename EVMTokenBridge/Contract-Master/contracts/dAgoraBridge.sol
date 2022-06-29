@@ -16,6 +16,7 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
     }
 
     bool public paused;
+    address private signer;
     uint256 public bridgeFee;
     uint256 private _nonceCount;
 
@@ -28,6 +29,7 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
     event Withdraw(address _tokenAddress, uint256 _amount, uint256 _nonce);
 
     constructor() Ownable() ReentrancyGuard() {
+        paused = true;
         factory = new dAgoraFactory();
         vault = new dAgoraVault();
         bridgeFee = 0.001 ether;
@@ -54,9 +56,10 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
         require(msg.value >= bridgeFee, "Not enough Ether to cover bridge fee");
         require(_amount > 0, "Cant bridge 0 tokens");
         require(nonceState[_nonce] != State.Transferring, "Transfer steps already complete");
+        nonceState[_nonce] = State.Transferring;
 
         bytes32 message = prefixed(keccak256(abi.encodePacked(
-            msg.sender,
+            address(vault),
             _amount,
             _nonce
         )));
@@ -65,9 +68,6 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
             recoverSigner(message, _signature) == msg.sender,
             "Invalid signature"
         );
-
-        nonceState[_nonce] = State.Transferring;
-        _nonceCount++;
 
         if(factory.isdAgoraToken(_tokenAddress)) {
             //Burn/Unwrap token 
@@ -98,9 +98,11 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
             nonceState[_nonce] != State.Withdrawing,
             "Nonce already withdrew"
         );
+        nonceState[_nonce] = State.Withdrawing;
+
 
         bytes32 message = prefixed(keccak256(abi.encodePacked(
-            msg.sender,
+            address(vault),
             _amount,
             _nonce
         )));
@@ -110,7 +112,6 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
             "Invalid signature"
         );
 
-        nonceState[_nonce] = State.Transferring;
         if (vault._isDepositedToVault(_tokenAddress)) {
             vault.Withdraw(msg.sender, _tokenAddress, _nonce);
         }   else {
@@ -134,10 +135,32 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
         bridgeFee = _newBridgeFee;
     }
 
+    function setNewSigner(address _newSigner) external onlyOwner {
+        signer = _newSigner;
+    }
+
+    function getVaultContract() 
+        external 
+        view 
+        returns (address) 
+    {
+        return address(vault);
+    }
+
+    function getdAgoraToken(
+        address _tokenAddress
+    ) 
+        public 
+        view 
+        returns(address) 
+    {
+        return factory.getdAgoraToken(_tokenAddress);
+    }    
     //returns the current nonce from mappings
     function getCurrentNonce() public view returns (uint256) {
         return _nonceCount;
     }
+
 
     function prefixed(bytes32 _hash) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(
@@ -177,6 +200,8 @@ contract dAgoraBridge is Ownable, ReentrancyGuard {
 
         return (v,r,s);
     }
+
+
 
 }
 
