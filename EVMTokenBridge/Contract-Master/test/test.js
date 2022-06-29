@@ -204,9 +204,7 @@ describe("dAgora Bridge test", function () {
             const dAgoraTokenFacoty = await ethers.getContractFactory('dAgoraToken');
             const dAgoraToken = dAgoraTokenFacoty.attach(dAgoraTokenAddress);
 
-            //console.log("dAgoraToken: ", dAgoraToken)
-            console.log('hello whore')
-
+            console.log("dAgoraToken: ", dAgoraToken)
             
             //Burning bridge tokens
             const burning = await bridge.connect(addr1).Deposit(
